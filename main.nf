@@ -20,7 +20,7 @@ def helpMessage() {
     nextflow run nf-core/rnaseq --input '*_R{1,2}.fastq.gz' --genome GRCh37 -profile docker
 
     Mandatory arguments:
-      --input [file]                  Path to input data (must be surrounded with quotes)
+      --input [fastqs | samples.csv]  Path pattern for input fastq files (must be surrounded with quotes), or CSV listing sample names and fastq paths. CSV must contain header line including columns: "sample", "fastq_1", "fastq_2". 
       -profile [str]                  Configuration profile to use. Can use multiple (comma separated)
                                       Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
@@ -460,6 +460,26 @@ if (params.input_paths) {
             .from(params.input_paths)
             .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true), file(row[1][1], checkIfExists: true) ] ] }
             .ifEmpty { exit 1, "params.input_paths was empty - no input files supplied" }
+            .into { ch_raw_reads_fastqc
+                    ch_raw_reads_umitools }
+    }
+} else if (!params.input_paths && "${params.input}".endsWith('.csv') ) {
+    if (params.single_end) {
+        Channel
+            .fromPath(params.input)
+            .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
+            .splitCsv(header: true)
+            .map {row -> [ row.sample, [ file(row.fastq_1, checkIfExists: true) ] ]}
+            .ifEmpty { exit 1, "${params.input} was empty - no fastq files supplied" }
+            .into { ch_raw_reads_fastqc
+                    ch_raw_reads_umitools }
+    } else {
+        Channel
+            .fromPath(params.input)
+            .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
+            .splitCsv(header: true)
+            .map {row -> [ row.sample, [ file(row.fastq_1, checkIfExists: true), file(row.fastq_2, checkIfExists: true) ] ]}
+            .ifEmpty { exit 1, "${params.input} was empty - no fastq files supplied" }
             .into { ch_raw_reads_fastqc
                     ch_raw_reads_umitools }
     }
