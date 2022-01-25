@@ -22,8 +22,11 @@ if (info$size == 0){
 counts = read.csv(counts_fn, row.names=1)
 tpm = read.csv(tpm_fn, row.names=1)
 
-if (length(intersect(rownames(counts), rowdata[["tx"]])) > length(intersect(rownames(counts), rowdata[["gene_id"]]))){
+if ((length(intersect(rownames(counts), rowdata[["tx"]])) > length(intersect(rownames(counts), rowdata[["gene_id"]]))) & length(grep("transcript",counts_fn)) >  0){
     by_what = "tx"
+} else if ((length(intersect(rownames(counts), rowdata[["tx"]])) <= length(intersect(rownames(counts), rowdata[["gene_id"]]))) & length(grep("transcript",counts_fn)) >  0){
+    by_what = "tx"
+    print("Please check if the transcriptome fasta file matches the gtf file or if there are duplicates in case there is an additional transcript fasta file.")
 } else {
     by_what = "gene_id"
     rowdata = unique(rowdata[,2:3])
