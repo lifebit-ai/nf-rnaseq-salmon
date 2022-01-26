@@ -927,7 +927,7 @@ if (params.with_umi) {
 if (!params.skip_trimming) {
     process TRIMGALORE {
         tag "$name"
-        label 'process_low'
+        label 'process_trim'
         publishDir "${params.outdir}/trimgalore", mode: params.publish_dir_mode,
             saveAs: { filename ->
                 if (filename.indexOf("_fastqc") > 0) "fastqc/$filename"
@@ -966,11 +966,11 @@ if (!params.skip_trimming) {
         nextseq = params.trim_nextseq > 0 ? "--nextseq ${params.trim_nextseq}" : ''
         if (params.single_end) {
             """
-            trim_galore --cores $cores --fastqc --gzip $c_r1 $tpc_r1 $nextseq $reads
+            trim_galore --cores $cores --fastqc --fastqc_args "--threads $cores" --gzip $c_r1 $tpc_r1 $nextseq $reads
             """
         } else {
             """
-            trim_galore --cores $cores --paired --fastqc --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $nextseq $reads
+            trim_galore --cores $cores --paired --fastqc --fastqc_args "--threads $cores" --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $nextseq $reads
             """
         }
     }
@@ -1079,7 +1079,7 @@ if (!params.skip_alignment) {
         hisat_stdout = Channel.empty()
         process STAR_ALIGN {
             tag "$name"
-            label 'process_low'
+            label 'high_memory'
             publishDir "${params.outdir}/star", mode: params.publish_dir_mode,
                 saveAs: { filename ->
                     if (filename.indexOf(".bam") == -1) "logs/$filename"
@@ -1412,7 +1412,7 @@ if (!params.skip_alignment) {
 
     process PRESEQ {
         tag "${bam.baseName - '.sorted'}"
-        label 'high_time'
+        label 'low_memory'
         publishDir "${params.outdir}/preseq", mode: params.publish_dir_mode
 
         when:
@@ -1497,7 +1497,7 @@ if (!params.skip_alignment) {
 
     process DUPRADAR {
         tag "${bam.baseName - '.sorted.markDups'}"
-        label 'high_time'
+        label 'low_memory'
         publishDir "${params.outdir}/dupradar", mode: params.publish_dir_mode,
             saveAs: { filename ->
                 if (filename.indexOf("_duprateExpDens.pdf") > 0) "scatter_plots/$filename"
